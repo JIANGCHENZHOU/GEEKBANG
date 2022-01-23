@@ -22,8 +22,12 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 import java.io.IOException;
 
+import com.geek.http.netty.filter.UrlHttpRequestFilter;
+
 public class HttpHandler extends ChannelInboundHandlerAdapter {
     
+    private UrlHttpRequestFilter urlHttpRequestFilter = new UrlHttpRequestFilter();
+
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
@@ -34,14 +38,9 @@ public class HttpHandler extends ChannelInboundHandlerAdapter {
         try {
             //logger.info("channelRead流量接口请求开始，时间为{}", startTime);
             FullHttpRequest fullRequest = (FullHttpRequest) msg;
-            String uri = fullRequest.uri();
-            //logger.info("接收到的请求url为{}", uri);
-            if (uri.contains("/test")) {
-                handlerTest(fullRequest, ctx, "hello,kimmking");
-            } else {
-                handlerTest(fullRequest, ctx, "hello,others");
-            }
-    
+            
+            handlerTest(fullRequest, ctx);
+
         } catch(Exception e) {
             e.printStackTrace();
         } finally {
@@ -49,14 +48,15 @@ public class HttpHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void handlerTest(FullHttpRequest fullRequest, ChannelHandlerContext ctx, String body) {
+    private void handlerTest(FullHttpRequest fullRequest, ChannelHandlerContext ctx) {
         FullHttpResponse response = null;
-        try {
-            String value = body; // 对接上次作业的httpclient或者okhttp请求另一个url的响应数据
+        String value = null;
 
-//            httpGet ...  http://localhost:8801
-//            返回的响应，"hello,nio";
-//            value = reponse....
+        try {
+            //uri过滤器：过滤所有不含/test的url
+            urlHttpRequestFilter.filter(fullRequest);
+
+            //使用okhttp访问后端接口
             OkHttpClient client = new OkHttpClient().newBuilder().build();
             Request request = new Request.Builder().url("http://localhost:8801").get().build();
             Response resp = null;
@@ -70,7 +70,9 @@ public class HttpHandler extends ChannelInboundHandlerAdapter {
                 }
             } catch (IOException e) {
                 value = "system error!";
-            }            
+            } catch (Exception e) {
+                value = e.getMessage();
+            }
 
             response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(value.getBytes("UTF-8")));
             response.headers().set("Content-Type", "application/json");
