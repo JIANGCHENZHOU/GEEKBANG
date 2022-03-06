@@ -1,0 +1,23 @@
+spring:
+  aop:
+   auto: true
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    druid:
+      master:
+        url: jdbc:mysql://localhost:3306/geek_db?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=UTC 
+        username: root
+        password: 123456
+      slave:
+        url: jdbc:mysql://localhost:3308/geek_db?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=UTC 
+        username: root
+        password: 
+mybatis:
+  mapper-locations: classpath:mapping/*Mapper.xml
+  type-aliases-package: com.rexxar.batch_inser.domain
+  configuration:
+    map-underscore-to-camel-case: true
+
+server:
+  port: 8080
